@@ -1,6 +1,6 @@
 #include <Adafruit_Sensor.h>
-#include <Adafruit_LSM9DS1.h>
 #include <ArduinoQueue.h>
+#include "Gyro.h"
 #include "Wheel.h"
 #include "PositionData.h"
 
@@ -18,6 +18,7 @@
 
 volatile int *Wheel1State = new int;
 volatile int *Wheel2State = new int;
+Gyro gyro;
 
 void FloodFill(Cell *maze[][5]) {
   ArduinoQueue<Cell *> q(64);
@@ -184,17 +185,11 @@ void onMotorInterrupt(volatile int *motorState) {
 Wheel wheel1 = Wheel(ENCODER_A, MOTOR1_PIN1, MOTOR1_PIN2, MOTOR1_SPEED, Wheel1State);
 Wheel wheel2 = Wheel(ENCODER_B, MOTOR2_PIN1, MOTOR2_PIN2, MOTOR2_SPEED, Wheel2State);
 
-// Create the IMU object
-Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1();
 
 void setup() {
   Serial.begin(9600);
   pinMode(ENCODER_A, INPUT);
   pinMode(ENCODER_B, INPUT);
-
-  if (!lsm.begin()) {
-    Serial.println("Failed to detect LSM9DS1");
-  }
 
 
   // Set default wheel states
@@ -219,44 +214,22 @@ void setup() {
   wheel1.spinWheel(FORWARD, 255);
   wheel2.spinWheel(BACKWARD, 255);
   Serial.println("Sent signal");
+  if (gyro.begin()) {
+    Serial.println("Begun gyro");
+  } else {
+    Serial.println("Failed to begin gyro");
+  }
 }
 
 bool goingBackwards = false;
 void loop() {
-  Serial.print("Wheel 1 State: ");
-  Serial.print(*wheel1.wheelState);
-  Serial.print(" Wheel 2 State: ");
-  Serial.print(*wheel2.wheelState);
-  Serial.println("");
+  gyro.update();
+  Serial.println(gyro.getAngle());
+  // Serial.print("Wheel 1 State: ");
+  // Serial.print(*wheel1.wheelState);
+  // Serial.print(" Wheel 2 State: ");
+  // Serial.print(*wheel2.wheelState);
+  // Serial.println("");
 
-  /* sensors_event_t accel, gyro, mag, temp;
-
-  // Read all sensors
-  lsm.getEvent(&accel, &mag, &gyro, &temp);
-  Serial.print("Accel: ");
-  Serial.print(accel.acceleration.x);
-  Serial.print(", ");
-  Serial.print(accel.acceleration.y);
-  Serial.print(", ");
-  Serial.println(accel.acceleration.z);
-
-  // Print gyroscope (rad/s)
-  Serial.print("Gyro:  ");
-  Serial.print(gyro.gyro.x);
-  Serial.print(", ");
-  Serial.print(gyro.gyro.y);
-  Serial.print(", ");
-  Serial.println(gyro.gyro.z);
-
-  // Print magnetometer (uTesla)
-  Serial.print("Mag:   ");
-  Serial.print(mag.magnetic.x);
-  Serial.print(", ");
-  Serial.print(mag.magnetic.y);
-  Serial.print(", ");
-  Serial.println(mag.magnetic.z);
-
-  Serial.println();
-  delay(100); */
   delay(100);
 }

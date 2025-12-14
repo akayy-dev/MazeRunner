@@ -83,20 +83,47 @@ def moveDirection(dir: Direction):
 		currentX -= 1
 
 def turn_to(target: Orientation):
-    if robot.orientation == target:
-        return
+	if robot.orientation == target:
+		return
 
-    # Calculate turns needed
-    # North=0, East=1, South=2, West=3 (Assuming this mapping for logic)
-    # We can just use simple if/else for the enum
-    
-    # Simple logic: just turn right until we match
-    while robot.orientation != target:
-        API.turnRight()
-        if robot.orientation == Orientation.NORTH: robot.orientation = Orientation.EAST
-        elif robot.orientation == Orientation.EAST: robot.orientation = Orientation.SOUTH
-        elif robot.orientation == Orientation.SOUTH: robot.orientation = Orientation.WEST
-        elif robot.orientation == Orientation.WEST: robot.orientation = Orientation.NORTH
+	# Calculate turns needed
+	# North=0, East=1, South=2, West=3 (Assuming this mapping for logic)
+	# We can just use simple if/else for the enum
+	
+	# Simple logic: just turn right until we match
+	while robot.orientation != target:
+		API.turnRight()
+		if robot.orientation == Orientation.NORTH: robot.orientation = Orientation.EAST
+		elif robot.orientation == Orientation.EAST: robot.orientation = Orientation.SOUTH
+		elif robot.orientation == Orientation.SOUTH: robot.orientation = Orientation.WEST
+		elif robot.orientation == Orientation.WEST: robot.orientation = Orientation.NORTH
+
+def get_side_from_direction(dir: Direction) -> Side:
+	"""Returns the absolute Side based on relative direction and current orientation."""
+	if robot.orientation == Orientation.NORTH:
+		if dir == Direction.FORWARD: return Side.TOP
+		if dir == Direction.BACKWARD: return Side.DOWN
+		if dir == Direction.LEFT: return Side.LEFT
+		if dir == Direction.RIGHT: return Side.RIGHT
+	
+	elif robot.orientation == Orientation.EAST:
+		if dir == Direction.FORWARD: return Side.RIGHT
+		if dir == Direction.BACKWARD: return Side.LEFT
+		if dir == Direction.LEFT: return Side.TOP
+		if dir == Direction.RIGHT: return Side.DOWN
+
+	elif robot.orientation == Orientation.SOUTH:
+		if dir == Direction.FORWARD: return Side.DOWN
+		if dir == Direction.BACKWARD: return Side.TOP
+		if dir == Direction.LEFT: return Side.RIGHT
+		if dir == Direction.RIGHT: return Side.LEFT
+
+	elif robot.orientation == Orientation.WEST:
+		if dir == Direction.FORWARD: return Side.LEFT
+		if dir == Direction.BACKWARD: return Side.RIGHT
+		if dir == Direction.RIGHT: return Side.TOP
+		if dir == Direction.LEFT: return Side.DOWN
+
 
 
 def get_neighbor_coords(dir: Direction) -> List[int]:
@@ -135,7 +162,7 @@ def is_valid(coords: List[int]):
 	"""Check if the maze coords are within bounds"""
 	return 0 <= coords[0] < 5 and 0 <= coords[1] < 5
 
-def main():
+def DFS():
 	adjacent = []
 	robot.orientation = Orientation.NORTH
 	log("Running micromouse algorithm")
@@ -153,7 +180,7 @@ def main():
 				log("Adding forward cell to adjacent queue")
 		else:
 			# if there is a wall, mark it
-			currentPos.walls.append(Direction.FORWARD)
+			currentPos.walls.add(get_side_from_direction(Direction.FORWARD))
 		if not API.wallLeft():
 			coords = get_neighbor_coords(Direction.LEFT)
 			if is_valid(coords):
@@ -162,7 +189,7 @@ def main():
 				adjacent.append(left)
 				log("Adding left cell to adjacent queue")
 		else:
-			currentPos.walls.append(Direction.LEFT)
+			currentPos.walls.add(get_side_from_direction(Direction.LEFT))
 		if not API.wallRight():
 			coords = get_neighbor_coords(Direction.RIGHT)
 			if is_valid(coords):
@@ -171,16 +198,20 @@ def main():
 				adjacent.append(right)
 				log("Adding right cell to adjacent queue")
 		else:
-			currentPos.walls.append(Direction.LEFT)
+			currentPos.walls.add(get_side_from_direction(Direction.RIGHT))
+		if API.wallBack():
+			currentPos.walls.add(get_side_from_direction(Direction.BACKWARD))
 		# move to adjacent cells
 		next:Cell = adjacent.pop()
 		log(f"Next Cell:\n{next}")
 		moveDirection(next.direction)
+		next.visited = True
 
 		# If we've reached a dead end.
 		if API.wallFront() and API.wallLeft() and API.wallRight():
 			previous:Cell = adjacent.pop()
 			log(f"REACHED DEAD END: Backtracking by going {previous.direction}")
+			API.setColor(currentX, currentY, "r")
 			while API.wallFront():
 				current_orientation = robot.orientation
 				API.turnLeft()
@@ -191,14 +222,15 @@ def main():
 				elif current_orientation == Orientation.WEST: robot.orientation = Orientation.NORTH
 			moveDirection(previous.direction)
 	
+		colors = ["g", "o","w", "y", "C"]
+		API.setColor(currentX, currentY, colors[len(currentPos.walls)])
 		log(f"Coordinates: X: {currentX}, Y: {currentY}")
 
 			
 
 
 if __name__ == "__main__":
-	main()
-	API.setColor(0, 0, "G")
+	DFS()
 	while True:
 		if not API.wallFront():
 			API.moveForward()

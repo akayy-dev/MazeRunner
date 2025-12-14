@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Set
 from orientation import *
 
 
@@ -10,4 +10,4 @@ class Cell:
 	direction: Direction
 	X: int
 	Y: int
-	walls: List[Direction] = field(default_factory=list)
+	walls: Set[Side] = field(default_factory=set)
