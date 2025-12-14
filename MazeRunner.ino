@@ -1,6 +1,9 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM9DS1.h>
 #include <ArduinoQueue.h>
+#include "Wheel.h"
+#include "PositionData.h"
+
 // Encoder output pins
 #define ENCODER_A 2
 #define ENCODER_B 3
@@ -15,103 +18,6 @@
 
 volatile int *Wheel1State = new int;
 volatile int *Wheel2State = new int;
-
-
-enum WheelDirection {
-  FORWARD = 1,
-  BACKWARD = -1,
-};
-
-enum RobotOrientation {
-  NORTH = 1,
-  EAST = 2,
-  SOUTH = 3,
-  WEST = 4
-};
-
-
-
-
-class Wheel {
-public:
-  int encoderPin;
-  int motorPin1;
-  int motorPin2;
-  int motorSpeed;
-  WheelDirection currentDirection;
-  volatile int *wheelState;
-
-
-  Wheel(int encoderPin, int motorPin1, int motorPin2, int motorSpeed, volatile int *wheelState) {
-    this->encoderPin = encoderPin;
-    this->motorPin1 = motorPin1;
-    this->motorPin2 = motorPin2;
-    this->motorSpeed = motorSpeed;
-    this->wheelState = wheelState;
-
-    pinMode(this->encoderPin, INPUT);
-    pinMode(this->motorPin1, OUTPUT);
-    pinMode(this->motorPin2, OUTPUT);
-    pinMode(this->motorSpeed, OUTPUT);
-  }
-
-  volatile int getMotorState() {
-    return *this->wheelState;
-  }
-
-  void spinWheel(WheelDirection direction, int speed) {
-    if (direction == FORWARD) {
-      digitalWrite(this->motorPin1, HIGH);
-      digitalWrite(this->motorPin2, LOW);
-      this->currentDirection = FORWARD;
-    }
-
-    if (direction == BACKWARD) {
-      digitalWrite(this->motorPin1, LOW);
-      digitalWrite(this->motorPin2, HIGH);
-      this->currentDirection = BACKWARD;
-    }
-    analogWrite(this->motorSpeed, speed);
-  }
-
-  void coast() {
-    digitalWrite(this->motorPin1, LOW);
-    digitalWrite(this->motorPin2, LOW);
-  }
-
-  void brake() {
-    digitalWrite(this->motorPin1, HIGH);
-    digitalWrite(this->motorPin2, HIGH);
-  }
-
-  void onFullRotation() {
-    if (this->currentDirection == FORWARD) {
-      this->spinWheel(BACKWARD, 125);
-    } else if (this->currentDirection == BACKWARD) {
-      this->spinWheel(FORWARD, 125);
-    }
-  }
-};
-
-struct Position {
-  int xPos;
-  int yPos;
-};
-
-struct Cell {
-  // Whether or not the cells are touching a wall.
-  bool northWall;
-  bool southWall;
-  bool eastWall;
-  bool westWall;
-  uint8_t distance;
-
-  // Position of the cell, only keeping here for FlodFill
-  Position pos;
-
-  // Have we visited this cell before?
-  bool visited;
-};
 
 void FloodFill(Cell *maze[][5]) {
   ArduinoQueue<Cell *> q(64);
