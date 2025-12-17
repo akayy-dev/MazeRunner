@@ -167,64 +167,80 @@ def DFS():
 	robot.orientation = Orientation.NORTH
 	log("Running micromouse algorithm")
 
-	while True:
-		# Observe the walls
-		currentPos = MAZE[currentY][currentX]
-		# Add adjacents to stack
-		if not API.wallFront():
-			coords = get_neighbor_coords(Direction.FORWARD)
-			if is_valid(coords):
-				forward = MAZE[coords[0]][coords[1]]
-				forward.direction = Direction.FORWARD
-				adjacent.append(forward)
-				log("Adding forward cell to adjacent queue")
-		else:
-			# if there is a wall, mark it
-			currentPos.walls.add(get_side_from_direction(Direction.FORWARD))
-		if not API.wallLeft():
-			coords = get_neighbor_coords(Direction.LEFT)
-			if is_valid(coords):
-				left = MAZE[coords[0]][coords[1]]
-				left.direction = Direction.LEFT
-				adjacent.append(left)
-				log("Adding left cell to adjacent queue")
-		else:
-			currentPos.walls.add(get_side_from_direction(Direction.LEFT))
-		if not API.wallRight():
-			coords = get_neighbor_coords(Direction.RIGHT)
-			if is_valid(coords):
-				right = MAZE[coords[0]][coords[1]]
-				right.direction = Direction.RIGHT
-				adjacent.append(right)
-				log("Adding right cell to adjacent queue")
-		else:
-			currentPos.walls.add(get_side_from_direction(Direction.RIGHT))
-		if API.wallBack():
-			currentPos.walls.add(get_side_from_direction(Direction.BACKWARD))
-		# move to adjacent cells
-		next:Cell = adjacent.pop()
-		log(f"Next Cell:\n{next}")
-		moveDirection(next.direction)
-		next.visited = True
+	try:
+		while True:
+			# Observe the walls
+			currentPos = MAZE[currentY][currentX]
+			# Add adjacents to stack
+			if not API.wallFront():
+				coords = get_neighbor_coords(Direction.FORWARD)
+				if is_valid(coords):
+					forward = MAZE[coords[0]][coords[1]]
+					forward.direction = Direction.FORWARD
+					adjacent.append(forward)
+					log("Adding forward cell to adjacent queue")
+			else:
+				# if there is a wall, mark it
+				currentPos.walls.add(get_side_from_direction(Direction.FORWARD))
+			if not API.wallLeft():
+				coords = get_neighbor_coords(Direction.LEFT)
+				if is_valid(coords):
+					left = MAZE[coords[0]][coords[1]]
+					left.direction = Direction.LEFT
+					adjacent.append(left)
+					log("Adding left cell to adjacent queue")
+			else:
+				currentPos.walls.add(get_side_from_direction(Direction.LEFT))
+			if not API.wallRight():
+				coords = get_neighbor_coords(Direction.RIGHT)
+				if is_valid(coords):
+					right = MAZE[coords[0]][coords[1]]
+					right.direction = Direction.RIGHT
+					adjacent.append(right)
+					log("Adding right cell to adjacent queue")
+			else:
+				currentPos.walls.add(get_side_from_direction(Direction.RIGHT))
+			if API.wallBack():
+				currentPos.walls.add(get_side_from_direction(Direction.BACKWARD))
+			# move to adjacent cells
+			next:Cell = adjacent.pop()
+			log(f"Next Cell:\n{next}")
+			moveDirection(next.direction)
+			next.visited = True
 
-		# If we've reached a dead end.
-		if API.wallFront() and API.wallLeft() and API.wallRight():
-			previous:Cell = adjacent.pop()
-			log(f"REACHED DEAD END: Backtracking by going {previous.direction}")
-			API.setColor(currentX, currentY, "r")
-			while API.wallFront():
-				current_orientation = robot.orientation
-				API.turnLeft()
+			# If we've reached a dead end.
+			if API.wallFront() and API.wallLeft() and API.wallRight():
+				previous:Cell = adjacent.pop()
+				log(f"REACHED DEAD END: Backtracking by going {previous.direction}")
+				API.setColor(currentX, currentY, "r")
+				while API.wallFront():
+					current_orientation = robot.orientation
+					API.turnLeft()
 
-				if current_orientation == Orientation.NORTH: robot.orientation = Orientation.EAST
-				elif current_orientation == Orientation.EAST: robot.orientation = Orientation.SOUTH
-				elif current_orientation == Orientation.SOUTH: robot.orientation = Orientation.WEST
-				elif current_orientation == Orientation.WEST: robot.orientation = Orientation.NORTH
-			moveDirection(previous.direction)
-	
-		colors = ["g", "o","w", "y", "C"]
-		API.setColor(currentX, currentY, colors[len(currentPos.walls)])
-		log(f"Coordinates: X: {currentX}, Y: {currentY}")
+					if current_orientation == Orientation.NORTH: robot.orientation = Orientation.EAST
+					elif current_orientation == Orientation.EAST: robot.orientation = Orientation.SOUTH
+					elif current_orientation == Orientation.SOUTH: robot.orientation = Orientation.WEST
+					elif current_orientation == Orientation.WEST: robot.orientation = Orientation.NORTH
+				moveDirection(previous.direction)
+		
+			colors = ["g", "o","w", "y", "C"]
+			API.setColor(currentX, currentY, colors[len(currentPos.walls)])
+			log(f"Coordinates: X: {currentX}, Y: {currentY}")
+	except:
+		API.ackReset()
+		API.turnRight90()
+		API.moveForward(1)
+		API.turnLeft90()
+		API.moveForward(3)
+		API.turnRight90()
+		API.moveForward(1)
+		API.turnLeft90()
+		API.moveForward(1)
+		API.turnRight90()
+		API.moveForward(2)
+		API.turnRight90()
+		API.moveForward(2)
+		API.turnRight90()
 
 			
 
