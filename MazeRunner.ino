@@ -1,4 +1,3 @@
-#include <Adafruit_Sensor.h>
 #include <ArduinoQueue.h>
 #include "Gyro.h"
 #include "Wheel.h"
@@ -28,12 +27,11 @@
 #define FRONT_SONIC_ECHO 12
 #define FRONT_SONIC_TRIG 13
 
-#define WHEEL_SPEED 120
+#define WHEEL_SPEED 130
 
 
 volatile int *Wheel1State = new int;
 volatile int *Wheel2State = new int;
-Gyro gyro;
 
 void FloodFill(Cell *maze[][5]) {
   ArduinoQueue<Cell *> q(64);
@@ -110,12 +108,11 @@ public:
 
   Cell maze[5][5];
 
-  Robot(Wheel L, Wheel R, RobotOrientation orientation)
+  Robot(Wheel L, Wheel R, RobotOrientation orientation )
     : leftWheel(L), rightWheel(R) {
     this->orientation = orientation;
     position.xPos = 0;
     position.yPos = 0;
-    this->gyro = Gyro();
   }
 
   void DFSSearch() {
@@ -165,12 +162,16 @@ public:
     switch (this->orientation) {
       case NORTH:
         this->orientation = EAST;
+        break;
       case EAST:
         this->orientation = SOUTH;
+        break;
       case SOUTH:
         this->orientation = WEST;
+        break;
       case WEST:
         this->orientation = NORTH;
+        break;
     }
   }
 
@@ -182,12 +183,16 @@ public:
     switch (this->orientation) {
       case NORTH:
         this->orientation = WEST;
+        break;
       case WEST:
         this->orientation = SOUTH;
+        break;
       case EAST:
         this->orientation = NORTH;
+        break;
       case SOUTH:
         this->orientation = EAST;
+        break;
     }
   }
 
@@ -213,23 +218,27 @@ public:
   }
 
   void turnRight90() {
-    // this->rightWheel.spinWheel(FORWARD, 135);
-    // this->leftWheel.spinWheel(BACKWARD, 135);
+   this->gyro.reset();
 
-    float start = abs(gyro.getAngle());
-    while (true) {
-      float AngleChange = start - abs(gyro.getAngle());
-      Serial.print("Start: ");
-      Serial.print(start);
-      Serial.print(" Angle Change: ");
-      Serial.print(AngleChange);
-      Serial.println(" ");
+  this->rightWheel.spinWheel(FORWARD, WHEEL_SPEED);
+  this->leftWheel.spinWheel(BACKWARD, WHEEL_SPEED);
+  
 
-      if (AngleChange >= 90) {
-        Serial.println("Turned 90 degrees");
-        break;
-      }
+  while (true) {
+    this->gyro.update();
+    float angle = abs(this->gyro.getAngle());
+
+    Serial.print("Angle: ");
+    Serial.println(angle);
+
+    if (angle >= 90.0) {
+      break;
     }
+  }
+
+  this->leftWheel.brake();
+  this->rightWheel.brake();
+
   }
 
   void turnLeft90() {
@@ -260,6 +269,7 @@ void setup() {
   pinMode(ENCODER_A, INPUT);
   pinMode(ENCODER_B, INPUT);
 
+  delay(5000);
 
   // Set default wheel states
   *Wheel2State = 0;
@@ -281,7 +291,7 @@ void setup() {
                   RISING);
 
   Serial.println("Sent signal");
-  if (gyro.begin()) {
+  if (mouse.gyro.begin()) {
     Serial.println("Begun gyro");
   } else {
     Serial.println("Failed to begin gyro");
@@ -289,12 +299,15 @@ void setup() {
 
   // mouse.moveForwardOneCell();
   // Serial.println("Moving forward one cell");
-  mouse.turnRight90();
+  // mouse.turnRight90();
+  mouse.moveForwardOneCell();
+  // mouse.turnRight90();
+
+
 }
 
 void loop() {
   // Update the gyro position
-  gyro.update();
 
   Serial.print("Right Sensor: ");
   Serial.print(rightSensor.getDistance());
