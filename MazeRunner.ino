@@ -1,5 +1,4 @@
 #include <ArduinoQueue.h>
-#include <Stack.h>
 #include "Gyro.h"
 #include "Wheel.h"
 #include "Sensor.h"
@@ -9,17 +8,17 @@
 #define ENCODER_A 2
 #define ENCODER_B 3
 
-#define MOTOR1_PIN1 5
+#define MOTOR1_PIN1 4
 #define MOTOR1_PIN2 6
-#define MOTOR1_SPEED 4
+#define MOTOR1_SPEED 5
 
 #define MOTOR2_PIN1 A3
 #define MOTOR2_PIN2 A2
-#define MOTOR2_SPEED A1
+#define MOTOR2_SPEED 9
 
 #define CELL_LENGTH 700
-#define RIGHT_SONIC_ECHO 8
-#define RIGHT_SONIC_TRIG 9
+#define RIGHT_SONIC_ECHO A1
+#define RIGHT_SONIC_TRIG 8
 
 #define LEFT_SONIC_ECHO 10
 #define LEFT_SONIC_TRIG 11
@@ -27,7 +26,7 @@
 #define FRONT_SONIC_ECHO 12
 #define FRONT_SONIC_TRIG 13
 
-#define WHEEL_SPEED 130
+#define WHEEL_SPEED 90
 #define CELL_LENGTH 700
 
 #define TURNING_ANGLE 80
@@ -138,7 +137,7 @@ public:
     }
   }
 
-  void turnRight90()
+  void turnLeft90()
   {
     this->gyro.reset();
 
@@ -179,7 +178,7 @@ public:
     gyro.reset();
   }
 
-  void turnLeft90()
+  void turnRight90()
   {
     this->leftWheel.spinWheel(FORWARD, WHEEL_SPEED);
     this->rightWheel.spinWheel(BACKWARD, WHEEL_SPEED);
@@ -239,7 +238,7 @@ void setup()
   pinMode(ENCODER_A, INPUT);
   pinMode(ENCODER_B, INPUT);
 
-  delay(5000);
+  delay(3000);
 
   // Set default wheel states
   *Wheel2State = 0;
@@ -280,11 +279,14 @@ void loop()
   Serial.println(mouse.frontSensor.getDistance());
   if (!mouse.isWallLeft())
   {
+    mouse.turnLeft90();
     mouse.moveForwardOneCell();
+
   }
-  else
+  else if(!mouse.isWallFront())
   {
-    mouse.turnRight90();
-  }
-  delay(300);
+    mouse.moveForwardOneCell();
+  } else mouse.turnRight90();
+
+  delay(500);
 }
